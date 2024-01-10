@@ -236,15 +236,19 @@ while running:
             # если это была стрелка влево
             if event.key == pygame.K_LEFT:
                 to_left = False
+                player.cur_frame = 0
             # если это была стрелка вправо
             if event.key == pygame.K_RIGHT:
                 to_right = False
+                player.cur_frame = 0
             # если это была стрелка вниз
             if event.key == pygame.K_DOWN:
                 to_down = False
+                player.cur_frame = 0
             # если это была стрелка вверх
             if event.key == pygame.K_UP:
                 to_up = False
+                player.cur_frame = 0
     # В зависимости от значений переменных направления
     # меняем значения координат
     if to_shoot and rifle.__class__.__name__ != 'Nothing':
