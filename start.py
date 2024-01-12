@@ -8,8 +8,8 @@ FPS = 60
 pygame.init()
 clock = pygame.time.Clock()
 
-size = width, height = 200, 210
-screen = pygame.display.set_mode((200, 200))
+size = width, height = 600, 700
+screen = pygame.display.set_mode((width, height))
 
 
 def load_image(name, colorkey=None):
@@ -101,15 +101,15 @@ class Tile(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(all_sprites, player_group)
-        self.x = pos_x
-        self.y = pos_y
+        self.x = 270
+        self.y = 320
         self.frames = []
         self.sheet = load_image("gg.png")
         self.cut_sheet(self.sheet, 12, 1)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = tile_width * pos_x + 13, tile_height * pos_y + 13
+        self.rect.x, self.rect.y = tile_width * pos_x + 13, tile_height * pos_x + 13
 
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
@@ -200,7 +200,7 @@ camera = Camera()
 player, level_x, level_y = generate_level(load_level('level1.txt'))
 print("\n".join(load_level('level1.txt')))
 rifle = Nothing()
-STEP = 3
+STEP = 4
 e = 0
 to_move = False
 to_left = False
@@ -208,75 +208,48 @@ to_right = False
 to_up = False
 to_down = False
 to_shoot = False
+coord = []
 while running:
     screen.fill((0, 0, 0))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         # если произошло событие - нажатие клавиши
+        if event.type == pygame.MOUSEMOTION:
+            coord = event.pos
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
                 to_shoot = True
-            # если была нажата стрелка влево
-            if event.key == pygame.K_LEFT:
-                to_left = True
-            # если была нажата стрелка вверх
-            if event.key == pygame.K_UP:
-                to_up = True
-            # если была нажата стрелка вправо
-            if event.key == pygame.K_RIGHT:
-                to_right = True
-            # если была нажата стрелка вниз
-            if event.key == pygame.K_DOWN:
-                to_down = True
+            if event.key == pygame.K_d:
+                to_move = True
         # если пользователь перестал нажимать клавишу
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_RETURN:
                 to_shoot = False
-            # если это была стрелка влево
-            if event.key == pygame.K_LEFT:
-                to_left = False
-                player.cur_frame = 0
-            # если это была стрелка вправо
-            if event.key == pygame.K_RIGHT:
-                to_right = False
-                player.cur_frame = 0
-            # если это была стрелка вниз
-            if event.key == pygame.K_DOWN:
-                to_down = False
-                player.cur_frame = 0
-            # если это была стрелка вверх
-            if event.key == pygame.K_UP:
-                to_up = False
-                player.cur_frame = 0
+            if event.key == pygame.K_d:
+                to_move = False
     # В зависимости от значений переменных направления
     # меняем значения координат
     if to_shoot and rifle.__class__.__name__ != 'Nothing':
         rifle.cur_frame = (rifle.cur_frame + 1) % len(rifle.frames)
     if to_right or to_left or to_down or to_up:
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
-    if to_right:
-        player.rect.x += STEP
-        x = (player.rect.x - 13) / tile_width
-        y = (player.rect.y - 13) / tile_height
-        if rifle.__class__.__name__ != 'Nothing':
-            rifle.kill()
-            rifle = Rifle(load_image("kalash.png"), 4, 1, 10)
-    if to_left:
-        player.rect.x -= STEP
-        x = (player.rect.x - 13) / tile_width
-        y = (player.rect.y - 13) / tile_height
-        if rifle.__class__.__name__ != 'Nothing':
-            rifle.kill()
-            rifle = Rifle(load_image("AK-47l.png"), 4, 1)
-    if to_down:
-        player.rect.y += STEP
-        if rifle.__class__.__name__ != 'Nothing':
-            rifle.rect.y += STEP
-    if to_up:
-        player.rect.y -= STEP
-        if rifle.__class__.__name__ != 'Nothing':
-            rifle.rect.y -= STEP
+    if to_move:
+        # доработать движение, только наискосок пока ходит
+        player.cur_frame = (player.cur_frame + 1) % len(player.frames)
+        xy = abs(coord[0] - width // 2) + abs(coord[1] - height // 2)
+        xx = abs(coord[0] - width // 2) / xy
+        yy = abs(coord[1] - height // 2) / xy
+        if coord[0] < width // 2:
+            kx = -1
+        else:
+            kx = 1
+        if coord[1] < height // 2:
+            ky = -1
+        else:
+            ky = 1
+        player.rect.x += STEP * xx * kx
+        player.rect.y += STEP * yy * ky
     camera.update(player)
     for sprite in all_sprites:
         camera.apply(sprite)
