@@ -8,12 +8,12 @@ FPS = 60
 pygame.init()
 clock = pygame.time.Clock()
 
-size = width, height = 600, 700
+size = width, height = 900, 750
 screen = pygame.display.set_mode((width, height))
 
 
 def load_image(name, colorkey=None):
-    fullname = os.path.join('../pythonProject1/m_m_dayz/data', name)
+    fullname = os.path.join('data', name)
 
     if not os.path.isfile(fullname):
         print(f'Файл с изображением {fullname} не найден')
@@ -41,7 +41,7 @@ tile_width = tile_height = 19
 def start_screen():
     text = ['ЗАСТАВКА', '', 'ПРАВИЛА ИГРЫ', 'Если в правилах много строк,',
             'выводи построчно']
-    fon = pygame.transform.scale(load_image('fon.jpg'), (width, height))
+    fon = pygame.transform.scale(load_image('oblozhka.png'), (width, height))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
     coord_y = 50
