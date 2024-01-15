@@ -32,7 +32,7 @@ def load_image(name, colorkey=None):
 tile_images = {'wall': load_image('box.png'),
                'ground': load_image('ground.png'),
                'sand': load_image('sand.png'),
-               'stone': load_image('stone.png')}
+               'stone': load_image('stone.png'),}
 
 player_image = load_image('gg.png')
 tile_width = tile_height = 19
@@ -88,6 +88,8 @@ def load_level(file):
             level[j] = do + "2222222222" + posle
     print(level)
     return level
+
+
 
 
 class Tile(pygame.sprite.Sprite):
