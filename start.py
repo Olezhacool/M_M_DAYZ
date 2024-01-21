@@ -197,7 +197,7 @@ class Player(pygame.sprite.Sprite):
                 hs[ds.index(d)].mask = pygame.mask.from_surface(load_image('lil house comb.png'))
         for r in rs:
             if pygame.sprite.collide_mask(self, r):
-                r.rect.x, r.rect.y = player.rect.x - 10 + 4, player.rect.y - 4
+                r.rect.x, r.rect.y = player.rect.x + 2, player.rect.y - 7
                 self.rifle = r
                 self.frames = []
                 self.sheet = load_image("gg with ak.png")
