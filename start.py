@@ -1,4 +1,4 @@
-from random import sample, randint
+from random import sample
 import sys
 
 import pygame
@@ -66,6 +66,13 @@ player_image = load_image('gg.png')
 tile_width = tile_height = 19
 
 
+def draw_text(text, font, color, surface, x, y):
+    text_obj = font.render(text, True, color)
+    text_rect = text_obj.get_rect()
+    text_rect.topleft = (x, y)
+    surface.blit(text_obj, text_rect)
+
+
 def start_screen():
     text = ['ЗАСТАВКА', '', 'ПРАВИЛА ИГРЫ', 'Если в правилах много строк,',
             'выводи построчно']
@@ -96,7 +103,7 @@ class House1(pygame.sprite.Sprite):
         super().__init__(all_sprites, house_group)
         self.frames = []
         self.sheet = load_image("lil house comb.png")
-        self.cut_sheet(self.sheet, 2, 1)
+        self.cut_sheet(self.sheet, 1, 1)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.mask = pygame.mask.from_surface(self.image)
@@ -115,25 +122,24 @@ class House1(pygame.sprite.Sprite):
 
 class Door1(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
-        super().__init__(all_sprites, door_group)
+        super().__init__(all_sprites, house_group)
+        self.image1 = load_image("lil house inside.png")
+        self.image2 = load_image("lil house.png")
+        self.sheet = load_image("lil house.png")
         self.frames = []
-        self.open = 0
-        self.sheet = load_image("lil house d.png")
-        self.cut_sheet(self.sheet, 1, 1)
+        self.sheett(self.sheet)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
-        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
+        self.rect = self.image2.get_rect()
         self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
 
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
-        for j in range(rows):
-            for i in range(columns):
-                frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
-                    frame_location, self.rect.size)))
+    def sheett(self, sheet):
+        self.rect = pygame.Rect(0, 0, sheet.get_width(),
+                                sheet.get_height())
+        frame_location = (self.rect.w, self.rect.h)
+        self.frames.append(sheet.subsurface(pygame.Rect(
+            frame_location, self.rect.size)))
 
 
 def terminate():
@@ -156,29 +162,25 @@ class Player(pygame.sprite.Sprite):
         self.y = 0
         self.move = True
         self.rifle = Nothing()
-        self.rows = 0
-        self.f_l = []
         self.frames = []
         self.sheet = load_image("gg.png")
-        self.cut_sheet(12, 1)
+        self.cut_sheet(self.sheet, 12, 1)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.mask = pygame.mask.from_surface(load_image("ggm.png"))
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = 56, 56
+        self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
 
-    def cut_sheet(self, columns, rows):
-        self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
-                                self.sheet.get_height() // (rows))
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
         for j in range(rows):
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
-                self.f_l.append(frame_location)
-                self.frames.append(self.sheet.subsurface(pygame.Rect(
+                self.frames.append(sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
 
     def update(self):
-        ikey = False
         self.cur_frame = self.cur_frame % len(self.frames)
         self.image = self.frames[self.cur_frame]
         for h in hs:
@@ -254,9 +256,6 @@ def generate_level(level):
                 Tile('sand', x, y)
             elif level[y][x] == '2':
                 Tile('stone', x, y)
-            # elif level[y][x] == '3':
-            #     hs.append(House1(x, y))
-            #     ds.append(Door1(x, y))
             elif level[y][x] == '@':
                 Tile('sand', x, y)
                 np = Player(x, y)
@@ -302,7 +301,7 @@ to_right = False
 to_up = False
 to_down = False
 to_shoot = False
-coord = [0, 0]
+coord = []
 kx = 0
 ky = 0
 yy = 0
@@ -332,6 +331,7 @@ while running:
     if to_right or to_left or to_down or to_up:
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
     if to_move and player.move:
+        # доработать движение, только наискосок пока ходит
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
         xy = abs(coord[0] - width // 2) + abs(coord[1] - height // 2)
         xx = abs(coord[0] - width // 2) / (xy + 0.000001)
