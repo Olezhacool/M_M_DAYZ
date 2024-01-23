@@ -74,26 +74,26 @@ def draw_text(text, font, color, surface, x, y):
 
 
 def start_screen():
-    text = ['ЗАСТАВКА', '', 'ПРАВИЛА ИГРЫ', 'Если в правилах много строк,',
-            'выводи построчно']
-    fon = pygame.transform.scale(load_image('oblozhka.png'), (width, height))
+    fon = pygame.transform.scale(load_image('izmeneno.png'), (900, 750))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
-    coord_y = 50
-    for line in text:
-        draw_line = font.render(line, True, pygame.Color('black'))
-        line_rect = draw_line.get_rect()
-        coord_y += 1
-        line_rect.top = coord_y
-        line_rect.x = 20
-        coord_y += line_rect.height
-        screen.blit(draw_line, line_rect)
+    font = pygame.font.SysFont(None, 90)
+    button_1 = pygame.Rect(440, 240, 300, 60)
+    button_2 = pygame.Rect(440, 340, 420, 60)
+    button_3 = pygame.Rect(440, 440, 370, 60)
+    pygame.draw.rect(screen, 'red', button_1)
+    pygame.draw.rect(screen, 'red', button_2)
+    pygame.draw.rect(screen, 'red', button_3)
+    draw_text('ИГРАТЬ', font, 'white', screen, 460, 240)
+    draw_text('ОПИСАНИЕ', font, 'white', screen, 460, 340)
+    draw_text('ПРАВИЛА', font, 'white', screen, 460, 440)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                return
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button_1.collidepoint(pygame.mouse.get_pos()):
+                    return
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -103,7 +103,7 @@ class House1(pygame.sprite.Sprite):
         super().__init__(all_sprites, house_group)
         self.frames = []
         self.sheet = load_image("lil house comb.png")
-        self.cut_sheet(self.sheet, 1, 1)
+        self.cut_sheet(self.sheet, 2, 1)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.mask = pygame.mask.from_surface(self.image)
@@ -122,24 +122,25 @@ class House1(pygame.sprite.Sprite):
 
 class Door1(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
-        super().__init__(all_sprites, house_group)
-        self.image1 = load_image("lil house inside.png")
-        self.image2 = load_image("lil house.png")
-        self.sheet = load_image("lil house.png")
+        super().__init__(all_sprites, door_group)
         self.frames = []
-        self.sheett(self.sheet)
+        self.open = 0
+        self.sheet = load_image("lil house d.png")
+        self.cut_sheet(self.sheet, 1, 1)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect()
-        self.rect = self.image2.get_rect()
         self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
 
-    def sheett(self, sheet):
-        self.rect = pygame.Rect(0, 0, sheet.get_width(),
-                                sheet.get_height())
-        frame_location = (self.rect.w, self.rect.h)
-        self.frames.append(sheet.subsurface(pygame.Rect(
-            frame_location, self.rect.size)))
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
 
 
 def terminate():
@@ -162,25 +163,29 @@ class Player(pygame.sprite.Sprite):
         self.y = 0
         self.move = True
         self.rifle = Nothing()
+        self.rows = 0
+        self.f_l = []
         self.frames = []
         self.sheet = load_image("gg.png")
-        self.cut_sheet(self.sheet, 12, 1)
+        self.cut_sheet(12, 1)
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.mask = pygame.mask.from_surface(load_image("ggm.png"))
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
+        self.rect.x, self.rect.y = 56, 56
 
-    def cut_sheet(self, sheet, columns, rows):
-        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
-                                sheet.get_height() // rows)
+    def cut_sheet(self, columns, rows):
+        self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
+                                self.sheet.get_height() // (rows))
         for j in range(rows):
             for i in range(columns):
                 frame_location = (self.rect.w * i, self.rect.h * j)
-                self.frames.append(sheet.subsurface(pygame.Rect(
+                self.f_l.append(frame_location)
+                self.frames.append(self.sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
 
     def update(self):
+        ikey = False
         self.cur_frame = self.cur_frame % len(self.frames)
         self.image = self.frames[self.cur_frame]
         for h in hs:
@@ -256,6 +261,9 @@ def generate_level(level):
                 Tile('sand', x, y)
             elif level[y][x] == '2':
                 Tile('stone', x, y)
+            # elif level[y][x] == '3':
+            #     hs.append(House1(x, y))
+            #     ds.append(Door1(x, y))
             elif level[y][x] == '@':
                 Tile('sand', x, y)
                 np = Player(x, y)
@@ -301,7 +309,7 @@ to_right = False
 to_up = False
 to_down = False
 to_shoot = False
-coord = []
+coord = [0, 0]
 kx = 0
 ky = 0
 yy = 0
@@ -331,7 +339,6 @@ while running:
     if to_right or to_left or to_down or to_up:
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
     if to_move and player.move:
-        # доработать движение, только наискосок пока ходит
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
         xy = abs(coord[0] - width // 2) + abs(coord[1] - height // 2)
         xx = abs(coord[0] - width // 2) / (xy + 0.000001)
