@@ -211,7 +211,35 @@ class Player(pygame.sprite.Sprite):
                 self.cut_sheet(12, 1)
 
 
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(all_sprites, enemy_group)
+        self.x = 5
+        self.y = 0
+        self.move = True
+        self.rows = 0
+        self.f_l = []
+        self.frames = []
+        self.sheet = load_image("zomb_og.png")
+        self.cut_sheet(12, 1)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.mask = pygame.mask.from_surface(load_image("New Piskel.png"))
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = 56, 56
 
+    def cut_sheet(self, columns, rows):
+        self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
+                                self.sheet.get_height() // (rows))
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.f_l.append(frame_location)
+                self.frames.append(self.sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        pass
 
 
 class Rifle(pygame.sprite.Sprite):
@@ -287,6 +315,7 @@ class Camera:
 
 all_sprites = pygame.sprite.Group()
 start_screen()
+enemy_group = pygame.sprite.Group()
 door_group = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
@@ -378,6 +407,7 @@ while running:
     for sprite in all_sprites:
         camera.apply(sprite)
 
+    enemy_group.draw(screen)
     tiles_group.draw(screen)
     door_group.draw(screen)
     house_group.draw(screen)
