@@ -159,8 +159,8 @@ class Tile(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(all_sprites, player_group)
-        self.x = 0
-        self.y = 0
+        self.x = tile_width * pos_x
+        self.y = tile_width * pos_y
         self.move = True
         self.rifle = Nothing()
         self.rows = 0
@@ -172,7 +172,7 @@ class Player(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
         self.mask = pygame.mask.from_surface(load_image("ggm.png"))
         self.rect = self.image.get_rect()
-        self.rect.x, self.rect.y = 56, 56
+        self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
 
     def cut_sheet(self, columns, rows):
         self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
@@ -209,9 +209,6 @@ class Player(pygame.sprite.Sprite):
                 self.frames = []
                 self.sheet = load_image("gg with ak.png")
                 self.cut_sheet(12, 1)
-
-
-
 
 
 class Rifle(pygame.sprite.Sprite):
@@ -271,29 +268,15 @@ def generate_level(level):
                 Tile('wall', x, y)
     return np, x, y
 
-
-class Camera:
-    def __init__(self):
-        self.dx = 0
-        self.dy = 0
-
-    def apply(self, object):
-        object.rect = object.rect.move(self.dx, self.dy)
-
-    def update(self, target):
-        self.dx = width // 2 - target.rect.x - target.rect.w // 2
-        self.dy = height // 2 - target.rect.y - target.rect.h // 2
-
-
 all_sprites = pygame.sprite.Group()
 start_screen()
 door_group = pygame.sprite.Group()
+enemy_group = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 gun_group = pygame.sprite.Group()
 house_group = pygame.sprite.Group()
 running = True
-camera = Camera()
 player, level_x, level_y = generate_level(load_level('level1.txt'))
 # for i in range(3):
 #     x = randint(0, 50)
@@ -313,6 +296,80 @@ coord = [0, 0]
 kx = 0
 ky = 0
 yy = 0
+class Enemy(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(all_sprites, enemy_group)
+        self.x = tile_width * pos_x
+        self.y = tile_width * pos_y
+        self.move = True
+        self.rows = 0
+        self.f_l = []
+        self.frames = []
+        self.sheet = load_image("zomb_og.png")
+        self.cut_sheet(12, 1)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.mask = pygame.mask.from_surface(load_image("New Piskel.png"))
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
+        self.smotr()
+
+    def cut_sheet(self, columns, rows):
+        self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
+                                self.sheet.get_height() // (rows))
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.f_l.append(frame_location)
+                self.frames.append(self.sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        self.cur_frame = self.cur_frame % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+
+        for h in hs:
+            if not pygame.sprite.collide_mask(self, h):
+                self.move = True
+            else:
+                self.move = False
+                break
+
+    def smotr(self):
+        if player.x != self.x or player.y != self.y:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.xy = abs(player.x - self.x) + abs(player.y - self.y)
+            self.xx = abs(player.x - self.x) / (self.xy + 0.000001)
+            self.yy = abs(player.y - self.y) / (self.xy + 0.000001)
+            if player.x < self.x:
+                self.kx = -1
+            else:
+                self.kx = 1
+            if player.y < self.y:
+                self.ky = -1
+            else:
+                self.ky = 1
+            self.rect.x += round(STEP * self.xx * self.kx)
+            self.rect.y += round(STEP * self.yy * self.ky)
+            self.x += round(STEP * self.xx * self.kx)
+            self.y += round(STEP * self.yy * self.ky)
+
+
+class Camera:
+    def __init__(self):
+        self.dx = 0
+        self.dy = 0
+
+    def apply(self, object):
+        object.rect = object.rect.move(self.dx, self.dy)
+
+    def update(self, target):
+        self.dx = width // 2 - target.rect.x - target.rect.w // 2
+        self.dy = height // 2 - target.rect.y - target.rect.h // 2
+
+
+en = Enemy(10, 10)
+camera = Camera()
 while running:
     screen.fill((0, 0, 0))
     for event in pygame.event.get():
@@ -332,6 +389,7 @@ while running:
                 to_shoot = False
             if event.key == pygame.K_d:
                 to_move = False
+                player.cur_frame = 0
     # В зависимости от значений переменных направления
     # меняем значения координат
     if to_shoot and player.rifle.__class__.__name__ != 'Nothing':
@@ -339,6 +397,7 @@ while running:
     if to_right or to_left or to_down or to_up:
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
     if to_move and player.move:
+        en.smotr()
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
         xy = abs(coord[0] - width // 2) + abs(coord[1] - height // 2)
         xx = abs(coord[0] - width // 2) / (xy + 0.000001)
@@ -351,10 +410,10 @@ while running:
             ky = -1
         else:
             ky = 1
-        player.rect.x += STEP * xx * kx
-        player.rect.y += STEP * yy * ky
-        player.x += STEP * xx * kx
-        player.y += STEP * yy * ky
+        player.rect.x += round(STEP * xx * kx)
+        player.rect.y += round(STEP * yy * ky)
+        player.x += round(STEP * xx * kx)
+        player.y += round(STEP * yy * ky)
     elif not player.move:
         xy = abs(coord[0] - width // 2) + abs(coord[1] - height // 2)
         xx = abs(coord[0] - width // 2) / xy
@@ -369,10 +428,10 @@ while running:
             jy = 1
         if jy == -ky and jx == -kx:
             player.move = True
-            player.rect.x -= STEP * xx * kx
-            player.rect.y -= STEP * yy * ky
-            player.x -= STEP * xx * kx
-            player.y -= STEP * yy * ky
+            player.rect.x -= round(STEP * xx * kx)
+            player.rect.y -= round(STEP * yy * ky)
+            player.x -= round(STEP * xx * kx)
+            player.y -= round(STEP * yy * ky)
 
     camera.update(player)
     for sprite in all_sprites:
@@ -383,6 +442,7 @@ while running:
     house_group.draw(screen)
     player_group.draw(screen)
     all_sprites.update()
+    enemy_group.draw(screen)
     gun_group.draw(screen)
     clock.tick(30)
-    pygame.display.flip() 
+    pygame.display.flip()
