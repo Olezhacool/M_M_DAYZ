@@ -32,6 +32,31 @@ def load_image(name, colorkey=None):
     return image
 
 
+def load_level(file):
+    file = f'data/{file}'
+    with open(file, 'r') as f:
+        map_level = list(map(str.strip, f.readlines()))
+    max_width = 110
+    step = 20
+    towns = 3
+    # есть ошибки по длине
+    level = list(map(lambda x: x.ljust(max_width - 15, '0'), map_level))
+    level = list(map(lambda x: x.rjust(max_width, '1'), level))
+    level[3] = level[3][:7] + '@' + level[3][8:]
+    x = sample(range(15, 80, step), towns)
+    y = sample(range(0, 80, step), towns)
+    for i in y:
+        for j in range(i, i + step):
+            do = level[j][:x[y.index(i)]]
+            posle = level[j][x[y.index(i)] + step:]
+            level[j] = do + "22222222222222222222" + posle
+    for i in y:
+        hs.append(House1(x[y.index(i)] + 2, i))
+        ds.append(Door1(x[y.index(i)] + 2, i))
+    # print('\n'.join(level))
+    return level
+
+
 tile_images = {'wall': load_image('box.png'),
                'ground': load_image('ground.png'),
                'sand': load_image('sand.png'),
