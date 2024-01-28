@@ -74,19 +74,22 @@ def draw_text(text, font, color, surface, x, y):
 
 
 def start_screen():
-    fon = pygame.transform.scale(load_image('izmeneno.png'), (900, 750))
-    screen.blit(fon, (0, 0))
-    font = pygame.font.Font(None, 30)
-    font = pygame.font.SysFont(None, 90)
-    button_1 = pygame.Rect(width // 2 - 150, 240, 300, 60)
-    button_2 = pygame.Rect(width // 2 - 210, 340, 420, 60)
-    button_3 = pygame.Rect(width // 2 - 175, 440, 370, 60)
-    pygame.draw.rect(screen, 'red', button_1)
-    pygame.draw.rect(screen, 'red', button_2)
-    pygame.draw.rect(screen, 'red', button_3)
-    draw_text('ИГРАТЬ', font, 'white', screen, 334, 240)
-    draw_text('ОПИСАНИЕ', font, 'white', screen, 274, 340)
-    draw_text('ПРАВИЛА', font, 'white', screen, 310, 440)
+    screen = pygame.display.set_mode((width, height))
+    screen.fill('black')
+    fon = pygame.transform.scale(load_image('izmeneno1.png'), (450, 480))
+    screen.blit(fon, (40, 180))
+    font_title = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 150)
+    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
+    button_1 = pygame.Rect(480, 240, 300, 62)
+    button_2 = pygame.Rect(480, 340, 400, 62)
+    button_3 = pygame.Rect(480, 440, 360, 62)
+    pygame.draw.rect(screen, '#827627', button_1)
+    pygame.draw.rect(screen, '#827627', button_2)
+    pygame.draw.rect(screen, '#827627', button_3)
+    draw_text('M_M_DayZ', font_title, 'white', screen, 180, 10)
+    draw_text('ИГРАТЬ', font, 'white', screen, 510, 224)
+    draw_text('ОПИСАНИЕ', font, 'white', screen, 510, 324)
+    draw_text('ПРАВИЛА', font, 'white', screen, 510, 424)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -94,8 +97,37 @@ def start_screen():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if button_1.collidepoint(pygame.mouse.get_pos()):
                     return
+                if button_2.collidepoint(pygame.mouse.get_pos()):
+                    game_rules()
+                if button_3.collidepoint(pygame.mouse.get_pos()):
+                    settings()
         pygame.display.flip()
         clock.tick(FPS)
+
+def game_rules():
+    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
+    rules_window = pygame.display.set_mode((900, 750))
+    rules_window.fill('black')
+    text = font.render("Правила игры", True, 'white')
+    rules_window.blit(text, (100, 50))
+    pygame.display.update()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                start_screen()
+
+
+def settings():
+    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
+    rules_window = pygame.display.set_mode((900, 750))
+    rules_window.fill('black')
+    text = font.render("Настройки", True, 'white')
+    rules_window.blit(text, (100, 50))
+    pygame.display.update()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                start_screen()
 
 
 class House1(pygame.sprite.Sprite):
