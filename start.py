@@ -115,6 +115,8 @@ def game_rules():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 start_screen()
+                return
+    pygame.display.flip()
 
 
 def settings():
@@ -128,6 +130,7 @@ def settings():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 start_screen()
+                return
 
 
 class House1(pygame.sprite.Sprite):
@@ -205,6 +208,7 @@ class Player(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(load_image("ggm.png"))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
+
 
     def cut_sheet(self, columns, rows):
         self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
@@ -328,6 +332,7 @@ coord = [0, 0]
 kx = 0
 ky = 0
 yy = 0
+player_hp = 100
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(all_sprites, enemy_group)
@@ -345,6 +350,8 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
         self.smotr()
+        print(self.rect)
+
 
     def cut_sheet(self, columns, rows):
         self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
@@ -368,6 +375,7 @@ class Enemy(pygame.sprite.Sprite):
                 break
 
     def smotr(self):
+        global player_hp
         if player.x != self.x or player.y != self.y:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.xy = abs(player.x - self.x) + abs(player.y - self.y)
@@ -385,6 +393,25 @@ class Enemy(pygame.sprite.Sprite):
             self.rect.y += round(STEP * self.yy * self.ky)
             self.x += round(STEP * self.xx * self.kx)
             self.y += round(STEP * self.yy * self.ky)
+            if abs(player.x - self.x) <= 1 or abs(player.y - self.y) <= 1:
+                player_hp -= 7
+                print(player_hp)
+            if player_hp < 0:
+                died()
+
+def died():
+    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
+    rules_window = pygame.display.set_mode((900, 750))
+    rules_window.fill('black')
+    text = font.render("YOU DIED", True, 'white')
+    rules_window.blit(text, (400, 320))
+    pygame.display.update()
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                start_screen()
+                return
+    pygame.display.flip()
 
 
 class Camera:
@@ -398,9 +425,10 @@ class Camera:
     def update(self, target):
         self.dx = width // 2 - target.rect.x - target.rect.w // 2
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
+        print('1', self.dx, self.dy)
 
 
-en = Enemy(10, 10)
+en = Enemy(10, 50)
 camera = Camera()
 while running:
     screen.fill((0, 0, 0))
