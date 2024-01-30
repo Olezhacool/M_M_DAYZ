@@ -74,22 +74,19 @@ def draw_text(text, font, color, surface, x, y):
 
 
 def start_screen():
-    screen = pygame.display.set_mode((width, height))
-    screen.fill('black')
-    fon = pygame.transform.scale(load_image('izmeneno1.png'), (450, 480))
-    screen.blit(fon, (40, 180))
-    font_title = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 150)
-    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
-    button_1 = pygame.Rect(480, 240, 300, 62)
-    button_2 = pygame.Rect(480, 340, 400, 62)
-    button_3 = pygame.Rect(480, 440, 360, 62)
-    pygame.draw.rect(screen, '#827627', button_1)
-    pygame.draw.rect(screen, '#827627', button_2)
-    pygame.draw.rect(screen, '#827627', button_3)
-    draw_text('M_M_DayZ', font_title, 'white', screen, 180, 10)
-    draw_text('ИГРАТЬ', font, 'white', screen, 510, 224)
-    draw_text('ОПИСАНИЕ', font, 'white', screen, 510, 324)
-    draw_text('ПРАВИЛА', font, 'white', screen, 510, 424)
+    fon = pygame.transform.scale(load_image('izmeneno.png'), (900, 750))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    font = pygame.font.SysFont(None, 90)
+    button_1 = pygame.Rect(width // 2 - 150, 240, 300, 60)
+    button_2 = pygame.Rect(width // 2 - 210, 340, 420, 60)
+    button_3 = pygame.Rect(width // 2 - 175, 440, 370, 60)
+    pygame.draw.rect(screen, 'red', button_1)
+    pygame.draw.rect(screen, 'red', button_2)
+    pygame.draw.rect(screen, 'red', button_3)
+    draw_text('ИГРАТЬ', font, 'white', screen, 334, 240)
+    draw_text('ОПИСАНИЕ', font, 'white', screen, 274, 340)
+    draw_text('ПРАВИЛА', font, 'white', screen, 310, 440)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -97,37 +94,8 @@ def start_screen():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if button_1.collidepoint(pygame.mouse.get_pos()):
                     return
-                if button_2.collidepoint(pygame.mouse.get_pos()):
-                    game_rules()
-                if button_3.collidepoint(pygame.mouse.get_pos()):
-                    settings()
         pygame.display.flip()
         clock.tick(FPS)
-
-def game_rules():
-    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
-    rules_window = pygame.display.set_mode((900, 750))
-    rules_window.fill('black')
-    text = font.render("Правила игры", True, 'white')
-    rules_window.blit(text, (100, 50))
-    pygame.display.update()
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                start_screen()
-
-
-def settings():
-    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
-    rules_window = pygame.display.set_mode((900, 750))
-    rules_window.fill('black')
-    text = font.render("Настройки", True, 'white')
-    rules_window.blit(text, (100, 50))
-    pygame.display.update()
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                start_screen()
 
 
 class House1(pygame.sprite.Sprite):
@@ -193,6 +161,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__(all_sprites, player_group)
         self.x = tile_width * pos_x
         self.y = tile_width * pos_y
+        self.shield = 100
         self.move = True
         self.rifle = Nothing()
         self.rows = 0
@@ -361,14 +330,15 @@ class Enemy(pygame.sprite.Sprite):
         self.image = self.frames[self.cur_frame]
 
         for h in hs:
-            if not pygame.sprite.collide_mask(self, h):
-                self.move = True
-            else:
+            if pygame.sprite.collide_mask(self, h):
                 self.move = False
-                break
 
+        for d in ds:
+            if pygame.sprite.collide_mask(self, d):
+                self.move = False
     def smotr(self):
-        if player.x != self.x or player.y != self.y:
+        if (player.x - 10 != self.x or player.x + 10 != self.x or player.y - 10 != self.y or player.y + 10 != self.y)\
+                and self.move:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.xy = abs(player.x - self.x) + abs(player.y - self.y)
             self.xx = abs(player.x - self.x) / (self.xy + 0.000001)
@@ -385,6 +355,24 @@ class Enemy(pygame.sprite.Sprite):
             self.rect.y += round(STEP * self.yy * self.ky)
             self.x += round(STEP * self.xx * self.kx)
             self.y += round(STEP * self.yy * self.ky)
+        elif self.move == False:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.xy = abs(player.x - self.x) + abs(player.y - self.y)
+            self.xx = abs(player.x - self.x) / (self.xy + 0.000001)
+            self.yy = abs(player.y - self.y) / (self.xy + 0.000001)
+            if player.x < self.x:
+                self.kx = -1
+            else:
+                self.kx = 1
+            if player.y < self.y:
+                self.ky = -1
+            else:
+                self.ky = 1
+            self.move = True
+            self.rect.x -= round(STEP * self.xx * self.kx)
+            self.rect.y -= round(STEP * self.yy * self.ky)
+            self.x -= round(STEP * self.xx * self.kx)
+            self.y -= round(STEP * self.yy * self.ky)
 
 
 class Camera:
@@ -399,8 +387,19 @@ class Camera:
         self.dx = width // 2 - target.rect.x - target.rect.w // 2
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
+def poloska_hp(surf, x, y, pct):
+    if pct < 0:
+        pct = 0
+    lenght = 150
+    height = 15
+    fill = (pct / 100) * lenght
+    outline_rect = pygame.Rect(x, y, lenght, height)
+    fill_rect = pygame.Rect(x, y, fill, height)
+    pygame.draw.rect(surf, (255, 0, 0), fill_rect)
+    pygame.draw.rect(surf, (255, 255, 255), outline_rect, 2)
 
-en = Enemy(10, 10)
+
+en = Enemy(15, 1)
 camera = Camera()
 while running:
     screen.fill((0, 0, 0))
@@ -424,12 +423,12 @@ while running:
                 player.cur_frame = 0
     # В зависимости от значений переменных направления
     # меняем значения координат
+    en.smotr()
     if to_shoot and player.rifle.__class__.__name__ != 'Nothing':
         player.rifle.cur_frame = (player.rifle.cur_frame + 1) % len(player.rifle.frames)
     if to_right or to_left or to_down or to_up:
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
     if to_move and player.move:
-        en.smotr()
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
         xy = abs(coord[0] - width // 2) + abs(coord[1] - height // 2)
         xx = abs(coord[0] - width // 2) / (xy + 0.000001)
@@ -476,5 +475,6 @@ while running:
     all_sprites.update()
     enemy_group.draw(screen)
     gun_group.draw(screen)
+    poloska_hp(screen, 5, 5, player.shield)
     clock.tick(30)
     pygame.display.flip()
