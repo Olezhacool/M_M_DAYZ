@@ -377,24 +377,19 @@ class Enemy(pygame.sprite.Sprite):
             self.rect.y += round(STEP * self.yy * self.ky)
             self.x += round(STEP * self.xx * self.kx)
             self.y += round(STEP * self.yy * self.ky)
-        elif self.move == False:
-            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-            self.xy = abs(player.x - self.x) + abs(player.y - self.y)
-            self.xx = abs(player.x - self.x) / (self.xy + 0.000001)
-            self.yy = abs(player.y - self.y) / (self.xy + 0.000001)
-            if player.x < self.x:
-                self.kx = -1
-            else:
-                self.kx = 1
-            if player.y < self.y:
-                self.ky = -1
-            else:
-                self.ky = 1
-            self.move = True
-            self.rect.x -= round(STEP * self.xx * self.kx)
-            self.rect.y -= round(STEP * self.yy * self.ky)
-            self.x -= round(STEP * self.xx * self.kx)
-            self.y -= round(STEP * self.yy * self.ky)
+            for h in hs:
+                if pygame.sprite.collide_mask(self, h):
+                    self.move = False
+
+            for d in ds:
+                if pygame.sprite.collide_mask(self, d):
+                    self.move = False
+            if not self.move:
+                self.rect.x -= round(STEP * self.xx * self.kx)
+                self.rect.y -= round(STEP * self.yy * self.ky)
+                self.x -= round(STEP * self.xx * self.kx)
+                self.y -= round(STEP * self.yy * self.ky)
+                self.move = True
 
 
 class Camera:
