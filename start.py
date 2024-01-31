@@ -78,7 +78,8 @@ def start_screen():
     screen.fill('black')
     fon = pygame.transform.scale(load_image('izmeneno1.png'), (450, 480))
     screen.blit(fon, (40, 180))
-    font_title = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 150)
+    font_title = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf',
+                                  150)
     font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
     button_1 = pygame.Rect(480, 240, 300, 62)
     button_2 = pygame.Rect(480, 340, 400, 62)
@@ -103,6 +104,7 @@ def start_screen():
                     settings()
         pygame.display.flip()
         clock.tick(FPS)
+
 
 def game_rules():
     font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
@@ -208,7 +210,6 @@ class Player(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(load_image("ggm.png"))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
-
 
     def cut_sheet(self, columns, rows):
         self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
@@ -332,7 +333,7 @@ coord = [0, 0]
 kx = 0
 ky = 0
 yy = 0
-player_hp = 100
+player_hp = 130
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(all_sprites, enemy_group)
@@ -350,8 +351,6 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
         self.smotr()
-        print(self.rect)
-
 
     def cut_sheet(self, columns, rows):
         self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
@@ -364,18 +363,23 @@ class Enemy(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
+        global player_hp
+        font = pygame.font.Font(None, 35)
+        font_h = pygame.font.Font(None, 30)
         self.cur_frame = self.cur_frame % len(self.frames)
         self.image = self.frames[self.cur_frame]
+        self.helth = pygame.Rect(60, 55, player_hp, 18)
+        pygame.draw.rect(screen, 'red', self.helth)
+        draw_text('HP', font, 'white', screen, 16, 52)
+        draw_text(f"{player_hp}", font_h, 'white', screen, 110, 55)
+        if pygame.sprite.collide_mask(self, player):
+            player_hp -= 2
+        if player_hp <= 0:
+            died()
 
-        for h in hs:
-            if not pygame.sprite.collide_mask(self, h):
-                self.move = True
-            else:
-                self.move = False
-                break
+
 
     def smotr(self):
-        global player_hp
         if player.x != self.x or player.y != self.y:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.xy = abs(player.x - self.x) + abs(player.y - self.y)
@@ -393,11 +397,8 @@ class Enemy(pygame.sprite.Sprite):
             self.rect.y += round(STEP * self.yy * self.ky)
             self.x += round(STEP * self.xx * self.kx)
             self.y += round(STEP * self.yy * self.ky)
-            if abs(player.x - self.x) <= 1 or abs(player.y - self.y) <= 1:
-                player_hp -= 7
-                print(player_hp)
-            if player_hp < 0:
-                died()
+
+
 
 def died():
     font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
@@ -411,7 +412,6 @@ def died():
             if event.type == pygame.QUIT:
                 start_screen()
                 return
-    pygame.display.flip()
 
 
 class Camera:
@@ -425,7 +425,6 @@ class Camera:
     def update(self, target):
         self.dx = width // 2 - target.rect.x - target.rect.w // 2
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
-        print('1', self.dx, self.dy)
 
 
 en = Enemy(10, 50)
