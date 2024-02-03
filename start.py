@@ -41,7 +41,7 @@ def load_level(file):
     file = f'data/{file}'
     with open(file, 'r') as f:
         map_level = list(map(str.strip, f.readlines()))
-    max_width = 110
+    max_width = 200
     step = 20
     towns = 3
     # есть ошибки по длине
@@ -58,6 +58,7 @@ def load_level(file):
     for i in y:
         hs.append(House1(x[y.index(i)] + 2, i))
         ds.append(Door1(x[y.index(i)] + 2, i))
+        rs.append(AK(x[y.index(i)] + 8, i + 8, 0))
     # print('\n'.join(level))
     return level
 
@@ -203,11 +204,15 @@ class Player(pygame.sprite.Sprite):
         for d in ds:
             if pygame.sprite.collide_mask(self, d):
                 hs[ds.index(d)].image = load_image('lil house inside.png')
+                d.image = load_image('lil house inside.png')
+                hs[ds.index(d)].image = load_image('lil house inside cm.png')
                 hs[ds.index(d)].mask = pygame.mask.from_surface(load_image('lil house gr.png'))
                 d.mask = pygame.mask.from_surface(load_image('lil house floor.png'))
             else:
                 hs[ds.index(d)].image = load_image('lil house comb.png')
+                d.image = load_image('lil house d.png')
                 hs[ds.index(d)].mask = pygame.mask.from_surface(load_image('lil house comb.png'))
+
         for r in rs:
             if pygame.sprite.collide_mask(self, r):
                 r.rect.x, r.rect.y = player.rect.x + 2, player.rect.y - 7
@@ -256,6 +261,10 @@ class Bullet(pygame.sprite.Sprite):
                 self.kill()
         for d in ds:
             if pygame.sprite.collide_mask(player, d):
+                self.kill()
+        for e in ens:
+            if pygame.sprite.collide_mask(self, e):
+                e.hp -= 11
                 self.kill()
         for h in hs:
             if pygame.sprite.collide_mask(self, h):
@@ -344,7 +353,6 @@ player, level_x, level_y = generate_level(load_level('level1.txt'))
 #     hs.append(House1(x, y))
 #     ds.append(Door1(x, y))
 rs.append(AK(0, 0, 0))
-rs.append(AK(50, 0, 0))
 STEP = 4
 e = 0
 to_move = False
@@ -531,11 +539,11 @@ while running:
 
     tiles_group.draw(screen)
     door_group.draw(screen)
-    house_group.draw(screen)
     player_group.draw(screen)
     all_sprites.update()
     enemy_group.draw(screen)
     gun_group.draw(screen)
+    house_group.draw(screen)
     bullets.draw(screen)
     poloska_hp(screen, 5, 5, player.shield)
     clock.tick(30)
