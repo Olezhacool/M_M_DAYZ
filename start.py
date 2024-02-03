@@ -77,9 +77,9 @@ def start_screen():
     screen.fill('black')
     fon = pygame.transform.scale(load_image('izmeneno1.png'), (450, 480))
     screen.blit(fon, (40, 180))
-    font_title = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf',
+    font_title = pygame.font.Font('data\DischargePro.ttf',
                                   150)
-    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
+    font = pygame.font.Font('data\DischargePro.ttf', 90)
     button_1 = pygame.Rect(460, 240, 300, 62)
     button_2 = pygame.Rect(460, 340, 437, 62)
     button_3 = pygame.Rect(460, 440, 360, 62)
@@ -106,8 +106,8 @@ def start_screen():
 
 
 def game_rules():
-    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
-    font_r = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 27)
+    font = pygame.font.Font('data\DischargePro.ttf', 90)
+    font_r = pygame.font.Font('data\DischargePro.ttf', 27)
     rules_window = pygame.display.set_mode((900, 750))
     rules_window.fill('black')
     text = font.render("Правила игры", True, 'white')
@@ -136,8 +136,8 @@ def game_rules():
 
 
 def settings():
-    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
-    font_r = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 45)
+    font = pygame.font.Font('data\DischargePro.ttf', 90)
+    font_r = pygame.font.Font('data\DischargePro.ttf', 45)
     rules_window = pygame.display.set_mode((900, 750))
     rules_window.fill('black')
     x1 = 380
@@ -442,7 +442,7 @@ class Enemy(pygame.sprite.Sprite):
 
 def died():
     global player
-    font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
+    font = pygame.font.Font('data\DischargePro.ttf', 90)
     rules_window = pygame.display.set_mode((900, 750))
     rules_window.fill('black')
     text = font.render("YOU DIED", True, 'white')
