@@ -1,11 +1,19 @@
 from random import sample, randint
 import sys
+
 import pygame
 import os
 
-FPS = 60
+FPS = 100
 pygame.init()
+peps = []
+go = pygame.mixer.Sound('data/go.mp3')
+strelba = pygame.mixer.Sound('data/я1.mp3')
+sound3 = pygame.mixer.Sound('data/fon.mp3')
 hs = []
+ens = []
+bullets = pygame.sprite.Group()
+pepsas = pygame.sprite.Group()
 ds = []
 rs = []
 clock = pygame.time.Clock()
@@ -35,15 +43,15 @@ def load_level(file):
     file = f'data/{file}'
     with open(file, 'r') as f:
         map_level = list(map(str.strip, f.readlines()))
-    max_width = 110
+    max_width = 100
     step = 20
     towns = 3
     # есть ошибки по длине
     level = list(map(lambda x: x.ljust(max_width - 15, '0'), map_level))
     level = list(map(lambda x: x.rjust(max_width, '1'), level))
     level[3] = level[3][:7] + '@' + level[3][8:]
-    x = sample(range(15, 80, step), towns)
-    y = sample(range(0, 80, step), towns)
+    x = sample(range(15, max_width - step, step), towns)
+    y = sample(range(0, max_width - step, step), towns)
     for i in y:
         for j in range(i, i + step):
             do = level[j][:x[y.index(i)]]
@@ -52,6 +60,11 @@ def load_level(file):
     for i in y:
         hs.append(House1(x[y.index(i)] + 2, i))
         ds.append(Door1(x[y.index(i)] + 2, i))
+        e = randint(1, 10)
+        if e == 1:
+            rs.append(AK(x[y.index(i)] + 8, i + 8, 0))
+        print(e)
+
     # print('\n'.join(level))
     return level
 
@@ -97,13 +110,12 @@ def start_screen():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if button_1.collidepoint(pygame.mouse.get_pos()):
                     return
-                if button_2.collidepoint(pygame.mouse.get_pos()):
-                    settings()
-                if button_3.collidepoint(pygame.mouse.get_pos()):
-                    game_rules()
+                # if button_2.collidepoint(pygame.mouse.get_pos()):
+                #     settings()
+                # if button_3.collidepoint(pygame.mouse.get_pos()):
+                #     game_rules()
         pygame.display.flip()
         clock.tick(FPS)
-
 
 def game_rules():
     font = pygame.font.Font('data\DischargePro.ttf', 90)
@@ -237,6 +249,8 @@ class Player(pygame.sprite.Sprite):
         super().__init__(all_sprites, player_group)
         self.x = tile_width * pos_x
         self.y = tile_width * pos_y
+        self.shield = 100
+        self.pit = 90
         self.move = True
         self.rifle = Nothing()
         self.rows = 0
@@ -273,11 +287,15 @@ class Player(pygame.sprite.Sprite):
         for d in ds:
             if pygame.sprite.collide_mask(self, d):
                 hs[ds.index(d)].image = load_image('lil house inside.png')
+                d.image = load_image('lil house inside.png')
+                hs[ds.index(d)].image = load_image('lil house inside cm.png')
                 hs[ds.index(d)].mask = pygame.mask.from_surface(load_image('lil house gr.png'))
                 d.mask = pygame.mask.from_surface(load_image('lil house floor.png'))
             else:
                 hs[ds.index(d)].image = load_image('lil house comb.png')
+                d.image = load_image('lil house d.png')
                 hs[ds.index(d)].mask = pygame.mask.from_surface(load_image('lil house comb.png'))
+
         for r in rs:
             if pygame.sprite.collide_mask(self, r):
                 r.rect.x, r.rect.y = player.rect.x + 2, player.rect.y - 7
@@ -286,6 +304,66 @@ class Player(pygame.sprite.Sprite):
                 self.sheet = load_image("gg with ak.png")
                 self.cut_sheet(12, 1)
 
+        for p in peps:
+            if pygame.sprite.collide_mask(self, p):
+                self.pit += 5
+                peps.remove(p)
+                p.kill()
+
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self, x, y, c0, c1):
+        super().__init__(all_sprites, bullets)
+        self.image = pygame.Surface((3, 2))
+        self.image.fill((255, 186, 0))
+        self.speed = 19
+        self.rect = self.image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect.y = y
+        self.rect.x = x
+        self.c0 = c0
+        self.c1 = c1
+        self.w = [abs(int(i.rect.x) - int(x)) + abs(int(i.rect.y) - int(y)) for i in ens]
+        f = min(self.w)
+        self.e = [i for i in ens if abs(int(i.rect.x) - int(x)) + abs(int(i.rect.y) - int(y)) == f]
+        self.xy = abs(abs(x) - abs(c0)) + abs(abs(y) - abs(c1))
+        self.xx = abs(abs(x) - abs(c0)) / (self.xy + 0.000001)
+        self.yy = abs(abs(y) - abs(c1)) / (self.xy + 0.000001)
+        if abs(c0) < x:
+            self.kx = -1
+        else:
+            self.kx = 1
+        if abs(c1) < y:
+            self.ky = -1
+        else:
+            self.ky = 1
+        # player.rect.x += round(STEP * xx * kx)
+        # player.rect.y += round(STEP * yy * ky)
+
+    def update(self):
+        for e in ens:
+            if pygame.sprite.collide_mask(self, e):
+                e.hp -= 10
+        self.rect.x += round(self.speed * self.xx * self.kx)
+        self.rect.y += round(self.speed * self.yy * self.ky)
+        for h in hs:
+            if pygame.sprite.collide_mask(player, h):
+                self.kill()
+        for d in ds:
+            if pygame.sprite.collide_mask(player, d):
+                self.kill()
+        for e in ens:
+            if pygame.sprite.collide_mask(self, e):
+                e.hp -= 11
+                self.kill()
+        for h in hs:
+            if pygame.sprite.collide_mask(self, h):
+                self.kill()
+        for d in ds:
+            if pygame.sprite.collide_mask(self, d):
+                self.kill()
+        # убить, если он заходит за верхнюю часть экрана
+        if self.rect.bottom < 0:
+            self.kill()
 
 class Rifle(pygame.sprite.Sprite):
     def __init__(self, sheet, pos_x, pos_y, n=0):
@@ -312,6 +390,8 @@ class Rifle(pygame.sprite.Sprite):
         self.cur_frame = (self.cur_frame) % len(self.frames)
         self.image = self.frames[self.cur_frame]
 
+    def shoot(self, c0, c1):
+        bullet = Bullet(self.rect.x + 60, self.rect.y + 29, c0, c1)
 
 class AK(Rifle):
     def __init__(self, pos_x, pos_y, n=0):
@@ -323,6 +403,26 @@ class Nothing:
     def __init__(self):
         pass
 
+
+class Pepsa(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(all_sprites, pepsas)
+        self.frames = []
+        self.sheet = load_image("pep.png")
+        self.cut_sheet(self.sheet, 1, 1)
+        self.mask = pygame.mask.from_surface(load_image("pep.png"))
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
 
 def generate_level(level):
     np, x, y = None, None, None
@@ -340,7 +440,6 @@ def generate_level(level):
             elif level[y][x] == '@':
                 Tile('sand', x, y)
                 np = Player(x, y)
-                print(x, y)
             elif level[y][x] == '#':
                 Tile('wall', x, y)
     return np, x, y
@@ -373,12 +472,12 @@ coord = [0, 0]
 kx = 0
 ky = 0
 yy = 0
-player_hp = 130
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(all_sprites, enemy_group)
         self.x = tile_width * pos_x
         self.y = tile_width * pos_y
+        self.hp = 700
         self.move = True
         self.rows = 0
         self.f_l = []
@@ -403,24 +502,21 @@ class Enemy(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
-        global player_hp
-        font = pygame.font.Font(None, 35)
-        font_h = pygame.font.Font(None, 30)
+        if self.hp <= 0:
+            self.kill()
         self.cur_frame = self.cur_frame % len(self.frames)
         self.image = self.frames[self.cur_frame]
-        self.helth = pygame.Rect(60, 55, player_hp, 18)
-        pygame.draw.rect(screen, 'red', self.helth)
-        draw_text('HP', font, 'white', screen, 16, 52)
-        draw_text(f"{player_hp}", font_h, 'white', screen, 110, 55)
-        if pygame.sprite.collide_mask(self, player):
-            player_hp -= 2
-        if player_hp <= 0:
-            died()
 
+        for h in hs:
+            if pygame.sprite.collide_mask(self, h):
+                self.move = False
 
-
+        for d in ds:
+            if pygame.sprite.collide_mask(self, d):
+                self.move = False
     def smotr(self):
-        if player.x != self.x or player.y != self.y:
+        if (player.x - 10 != self.x or player.x + 10 != self.x or player.y - 10 != self.y or player.y + 10 != self.y)\
+                and self.move:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.xy = abs(player.x - self.x) + abs(player.y - self.y)
             self.xx = abs(player.x - self.x) / (self.xy + 0.000001)
@@ -433,32 +529,23 @@ class Enemy(pygame.sprite.Sprite):
                 self.ky = -1
             else:
                 self.ky = 1
-            self.rect.x += round(STEP * self.xx * self.kx)
-            self.rect.y += round(STEP * self.yy * self.ky)
-            self.x += round(STEP * self.xx * self.kx)
-            self.y += round(STEP * self.yy * self.ky)
+            self.rect.x += round(2 * self.xx * self.kx)
+            self.rect.y += round(2 * self.yy * self.ky)
+            self.x += round(2 * self.xx * self.kx)
+            self.y += round(2 * self.yy * self.ky)
+            for h in hs:
+                if pygame.sprite.collide_mask(self, h):
+                    self.move = False
 
-
-
-def died():
-    global player
-    font = pygame.font.Font('data\DischargePro.ttf', 90)
-    rules_window = pygame.display.set_mode((900, 750))
-    rules_window.fill('black')
-    text = font.render("YOU DIED", True, 'white')
-    rules_window.blit(text, (400, 320))
-    pygame.display.update()
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                terminate()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    start_screen()
-
-
-
-
+            for d in ds:
+                if pygame.sprite.collide_mask(self, d):
+                    self.move = False
+            if not self.move:
+                self.rect.x -= round(STEP * self.xx * self.kx)
+                self.rect.y -= round(STEP * self.yy * self.ky)
+                self.x -= round(STEP * self.xx * self.kx)
+                self.y -= round(STEP * self.yy * self.ky)
+                self.move = True
 
 
 class Camera:
@@ -473,8 +560,33 @@ class Camera:
         self.dx = width // 2 - target.rect.x - target.rect.w // 2
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
+def poloska_hp(surf, x, y, pct):
+    if pct < 0:
+        pct = 0
+    lenght = 150
+    height = 15
+    fill = (pct / 100) * lenght
+    outline_rect = pygame.Rect(x, y, lenght, height)
+    fill_rect = pygame.Rect(x, y, fill, height)
+    pygame.draw.rect(surf, (255, 0, 0), fill_rect)
+    pygame.draw.rect(surf, (255, 255, 255), outline_rect, 2)
 
-en = Enemy(10, 50)
+def poloska_pit(surf, x, y, pct):
+    if pct < 0:
+        pct = 0
+    lenght = 150
+    height = 15
+    fill = (pct / 100) * lenght
+    outline_rect = pygame.Rect(x, y, lenght, height)
+    fill_rect = pygame.Rect(x, y, fill, height)
+    pygame.draw.rect(surf, (0, 0, 255), fill_rect)
+    pygame.draw.rect(surf, (255, 255, 255), outline_rect, 2)
+
+
+en = Enemy(27, 1)
+pe = Pepsa(20, 0)
+peps.append(pe)
+ens.append(en)
 camera = Camera()
 while running:
     screen.fill((0, 0, 0))
@@ -486,24 +598,33 @@ while running:
             coord = event.pos
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_s:
+                if player.rifle.__class__.__name__ != 'Nothing':
+                    strelba.play(-1)
                 to_shoot = True
+
             if event.key == pygame.K_d:
+                go.play(-1)
                 to_move = True
         # если пользователь перестал нажимать клавишу
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_s:
                 to_shoot = False
+                player.rifle.cur_frame = 0
+                if player.rifle.__class__.__name__ != 'Nothing':
+                    strelba.stop()
             if event.key == pygame.K_d:
+                go.stop()
                 to_move = False
                 player.cur_frame = 0
     # В зависимости от значений переменных направления
-    # меняем значения координат
+    # меняем значения координатsd
+    en.smotr()
     if to_shoot and player.rifle.__class__.__name__ != 'Nothing':
         player.rifle.cur_frame = (player.rifle.cur_frame + 1) % len(player.rifle.frames)
+        player.rifle.shoot(coord[0], coord[1])
     if to_right or to_left or to_down or to_up:
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
     if to_move and player.move:
-        en.smotr()
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
         xy = abs(coord[0] - width // 2) + abs(coord[1] - height // 2)
         xx = abs(coord[0] - width // 2) / (xy + 0.000001)
@@ -520,20 +641,13 @@ while running:
         player.rect.y += round(STEP * yy * ky)
         player.x += round(STEP * xx * kx)
         player.y += round(STEP * yy * ky)
-    elif not player.move:
-        xy = abs(coord[0] - width // 2) + abs(coord[1] - height // 2)
-        xx = abs(coord[0] - width // 2) / xy
-        yy = abs(coord[1] - height // 2) / xy
-        if coord[0] < width // 2:
-            jx = -1
-        else:
-            jx = 1
-        if coord[1] < height // 2:
-            jy = -1
-        else:
-            jy = 1
-        if jy == -ky and jx == -kx:
-            player.move = True
+        for h in hs:
+            if not pygame.sprite.collide_mask(player, h):
+                player.move = True
+            else:
+                player.move = False
+                break
+        if not player.move:
             player.rect.x -= round(STEP * xx * kx)
             player.rect.y -= round(STEP * yy * ky)
             player.x -= round(STEP * xx * kx)
@@ -545,10 +659,14 @@ while running:
 
     tiles_group.draw(screen)
     door_group.draw(screen)
-    house_group.draw(screen)
     player_group.draw(screen)
     all_sprites.update()
     enemy_group.draw(screen)
     gun_group.draw(screen)
+    pepsas.draw(screen)
+    house_group.draw(screen)
+    bullets.draw(screen)
+    poloska_hp(screen, 5, 5, player.shield)
+    poloska_pit(screen, 170, 5, player.pit)
     clock.tick(30)
     pygame.display.flip()
