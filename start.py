@@ -6,6 +6,9 @@ import os
 
 FPS = 60
 pygame.init()
+go = pygame.mixer.Sound('data/go.mp3')
+strelba = pygame.mixer.Sound('data/я1.mp3')
+sound3 = pygame.mixer.Sound('data/fon.mp3')
 hs = []
 ens = []
 bullets = pygame.sprite.Group()
@@ -212,18 +215,54 @@ class Player(pygame.sprite.Sprite):
                 self.frames = []
                 self.sheet = load_image("gg with ak.png")
                 self.cut_sheet(12, 1)
+
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        pygame.sprite.Sprite.__init__(self)
+    def __init__(self, x, y, c0, c1):
+        super().__init__(all_sprites, bullets)
         self.image = pygame.Surface((3, 2))
+        self.image.fill((255, 186, 0))
+        self.speed = 19
         self.rect = self.image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect.y = y
         self.rect.x = x
-        w = [abs(int(i.rect.x) - int(x)) + abs(int(i.rect.y) - int(y)) for i in ens]
-        f = min(w)
+        self.c0 = c0
+        self.c1 = c1
+        self.w = [abs(int(i.rect.x) - int(x)) + abs(int(i.rect.y) - int(y)) for i in ens]
+        f = min(self.w)
+        self.e = [i for i in ens if abs(int(i.rect.x) - int(x)) + abs(int(i.rect.y) - int(y)) == f]
+        self.xy = abs(abs(x) - abs(c0)) + abs(abs(y) - abs(c1))
+        self.xx = abs(abs(x) - abs(c0)) / (self.xy + 0.000001)
+        self.yy = abs(abs(y) - abs(c1)) / (self.xy + 0.000001)
+        if abs(c0) < x:
+            self.kx = -1
+        else:
+            self.kx = 1
+        if abs(c1) < y:
+            self.ky = -1
+        else:
+            self.ky = 1
+        # player.rect.x += round(STEP * xx * kx)
+        # player.rect.y += round(STEP * yy * ky)
 
     def update(self):
-        self.rect.x += self.speedy
+        for e in ens:
+            if pygame.sprite.collide_mask(self, e):
+                e.hp -= 10
+        self.rect.x += round(self.speed * self.xx * self.kx)
+        self.rect.y += round(self.speed * self.yy * self.ky)
+        for h in hs:
+            if pygame.sprite.collide_mask(player, h):
+                self.kill()
+        for d in ds:
+            if pygame.sprite.collide_mask(player, d):
+                self.kill()
+        for h in hs:
+            if pygame.sprite.collide_mask(self, h):
+                self.kill()
+        for d in ds:
+            if pygame.sprite.collide_mask(self, d):
+                self.kill()
         # убить, если он заходит за верхнюю часть экрана
         if self.rect.bottom < 0:
             self.kill()
@@ -253,10 +292,8 @@ class Rifle(pygame.sprite.Sprite):
         self.cur_frame = (self.cur_frame) % len(self.frames)
         self.image = self.frames[self.cur_frame]
 
-    def shoot(self):
-        bullet = Bullet(self.rect.x + 62, self.rect.y + 30)
-        all_sprites.add(bullet)
-        bullets.add(bullet)
+    def shoot(self, c0, c1):
+        bullet = Bullet(self.rect.x + 60, self.rect.y + 29, c0, c1)
 
 class AK(Rifle):
     def __init__(self, pos_x, pos_y, n=0):
@@ -307,6 +344,7 @@ player, level_x, level_y = generate_level(load_level('level1.txt'))
 #     hs.append(House1(x, y))
 #     ds.append(Door1(x, y))
 rs.append(AK(0, 0, 0))
+rs.append(AK(50, 0, 0))
 STEP = 4
 e = 0
 to_move = False
@@ -324,6 +362,7 @@ class Enemy(pygame.sprite.Sprite):
         super().__init__(all_sprites, enemy_group)
         self.x = tile_width * pos_x
         self.y = tile_width * pos_y
+        self.hp = 700
         self.move = True
         self.rows = 0
         self.f_l = []
@@ -348,6 +387,8 @@ class Enemy(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
+        if self.hp <= 0:
+            self.kill()
         self.cur_frame = self.cur_frame % len(self.frames)
         self.image = self.frames[self.cur_frame]
 
@@ -373,10 +414,10 @@ class Enemy(pygame.sprite.Sprite):
                 self.ky = -1
             else:
                 self.ky = 1
-            self.rect.x += round(STEP * self.xx * self.kx)
-            self.rect.y += round(STEP * self.yy * self.ky)
-            self.x += round(STEP * self.xx * self.kx)
-            self.y += round(STEP * self.yy * self.ky)
+            self.rect.x += round(2 * self.xx * self.kx)
+            self.rect.y += round(2 * self.yy * self.ky)
+            self.x += round(2 * self.xx * self.kx)
+            self.y += round(2 * self.yy * self.ky)
             for h in hs:
                 if pygame.sprite.collide_mask(self, h):
                     self.move = False
@@ -416,7 +457,7 @@ def poloska_hp(surf, x, y, pct):
     pygame.draw.rect(surf, (255, 255, 255), outline_rect, 2)
 
 
-en = Enemy(15, 1)
+en = Enemy(27, 1)
 ens.append(en)
 camera = Camera()
 while running:
@@ -429,22 +470,30 @@ while running:
             coord = event.pos
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_s:
+                if player.rifle.__class__.__name__ != 'Nothing':
+                    strelba.play(-1)
                 to_shoot = True
+
             if event.key == pygame.K_d:
+                go.play(-1)
                 to_move = True
         # если пользователь перестал нажимать клавишу
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_s:
                 to_shoot = False
+                player.rifle.cur_frame = 0
+                if player.rifle.__class__.__name__ != 'Nothing':
+                    strelba.stop()
             if event.key == pygame.K_d:
+                go.stop()
                 to_move = False
                 player.cur_frame = 0
     # В зависимости от значений переменных направления
-    # меняем значения координат
+    # меняем значения координатsd
     en.smotr()
     if to_shoot and player.rifle.__class__.__name__ != 'Nothing':
         player.rifle.cur_frame = (player.rifle.cur_frame + 1) % len(player.rifle.frames)
-        player.rifle.shoot()
+        player.rifle.shoot(coord[0], coord[1])
     if to_right or to_left or to_down or to_up:
         player.cur_frame = (player.cur_frame + 1) % len(player.frames)
     if to_move and player.move:
@@ -484,10 +533,10 @@ while running:
     door_group.draw(screen)
     house_group.draw(screen)
     player_group.draw(screen)
-    bullets.draw(screen)
     all_sprites.update()
     enemy_group.draw(screen)
     gun_group.draw(screen)
+    bullets.draw(screen)
     poloska_hp(screen, 5, 5, player.shield)
     clock.tick(30)
     pygame.display.flip()
