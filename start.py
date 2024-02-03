@@ -1,6 +1,5 @@
 from random import sample, randint
 import sys
-
 import pygame
 import os
 
@@ -81,16 +80,16 @@ def start_screen():
     font_title = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf',
                                   150)
     font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
-    button_1 = pygame.Rect(480, 240, 300, 62)
-    button_2 = pygame.Rect(480, 340, 400, 62)
-    button_3 = pygame.Rect(480, 440, 360, 62)
+    button_1 = pygame.Rect(460, 240, 300, 62)
+    button_2 = pygame.Rect(460, 340, 437, 62)
+    button_3 = pygame.Rect(460, 440, 360, 62)
     pygame.draw.rect(screen, '#827627', button_1)
     pygame.draw.rect(screen, '#827627', button_2)
     pygame.draw.rect(screen, '#827627', button_3)
     draw_text('M_M_DayZ', font_title, 'white', screen, 180, 10)
-    draw_text('ИГРАТЬ', font, 'white', screen, 510, 224)
-    draw_text('ОПИСАНИЕ', font, 'white', screen, 510, 324)
-    draw_text('ПРАВИЛА', font, 'white', screen, 510, 424)
+    draw_text('ИГРАТЬ', font, 'white', screen, 490, 224)
+    draw_text('НАСТРОЙКИ', font, 'white', screen, 490, 324)
+    draw_text('ПРАВИЛА', font, 'white', screen, 490, 424)
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -99,40 +98,80 @@ def start_screen():
                 if button_1.collidepoint(pygame.mouse.get_pos()):
                     return
                 if button_2.collidepoint(pygame.mouse.get_pos()):
-                    game_rules()
-                if button_3.collidepoint(pygame.mouse.get_pos()):
                     settings()
+                if button_3.collidepoint(pygame.mouse.get_pos()):
+                    game_rules()
         pygame.display.flip()
         clock.tick(FPS)
 
 
 def game_rules():
     font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
+    font_r = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 27)
     rules_window = pygame.display.set_mode((900, 750))
     rules_window.fill('black')
     text = font.render("Правила игры", True, 'white')
     rules_window.blit(text, (100, 50))
     pygame.display.update()
+    yr = 210
+    rules = ['- Главныый герой должен премещаться по уровню,',
+             '          собирать оружие, аптечки и еду.', ' ',
+             '- Зомби будут атаковать героя,',
+             '      поэтому герой должен использовать оружие для защиты', ' ',
+             '- Герой может прятаться в домах,',
+             '          восполнить свое здоровье и голод'
+             ]
+    for line in rules:
+        draw_text(f'{line}', font_r, 'white', rules_window, 50, yr)
+        yr += 45
+    pygame.display.update()
     while True:
         for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    start_screen()
+                    return
             if event.type == pygame.QUIT:
-                start_screen()
-                return
-    pygame.display.flip()
+                terminate()
 
 
 def settings():
     font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
+    font_r = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 45)
     rules_window = pygame.display.set_mode((900, 750))
     rules_window.fill('black')
+    x1 = 380
+    y1 = 260
+    x2 = 480
+    y2 = 260
+    button_zv = pygame.Rect(x1, y1, 90, 40)
+    pygame.draw.rect(screen, '#827627', button_zv)
+    button_nzv = pygame.Rect(x2, y2, 120, 40)
+    pygame.draw.rect(screen, 'black', button_nzv)
     text = font.render("Настройки", True, 'white')
     rules_window.blit(text, (100, 50))
+    text = font_r.render("- Звук", True, 'white')
+    rules_window.blit(text, (170, 260))
+    text = font_r.render("ВКЛ", True, 'white')
+    rules_window.blit(text, (390, 260))
+    text = font_r.render("ВЫКЛ", True, 'white')
+    rules_window.blit(text, (490, 260))
     pygame.display.update()
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                start_screen()
-                return
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    start_screen()
+                    return
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if button_zv.collidepoint(pygame.mouse.get_pos()):
+                    x1, x2 = x2, x1
+                if button_nzv.collidepoint(pygame.mouse.get_pos()):
+                    x1, x2 = x2, x1
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 class House1(pygame.sprite.Sprite):
@@ -301,6 +340,7 @@ def generate_level(level):
             elif level[y][x] == '@':
                 Tile('sand', x, y)
                 np = Player(x, y)
+                print(x, y)
             elif level[y][x] == '#':
                 Tile('wall', x, y)
     return np, x, y
@@ -401,6 +441,7 @@ class Enemy(pygame.sprite.Sprite):
 
 
 def died():
+    global player
     font = pygame.font.Font('C:\\Users\max\PycharmProjects\M_M_DAYZ\data\DischargePro.ttf', 90)
     rules_window = pygame.display.set_mode((900, 750))
     rules_window.fill('black')
@@ -410,8 +451,14 @@ def died():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                start_screen()
-                return
+                terminate()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    start_screen()
+
+
+
+
 
 
 class Camera:
