@@ -4,14 +4,16 @@ import sys
 import pygame
 import os
 
-FPS = 60
+FPS = 100
 pygame.init()
+peps = []
 go = pygame.mixer.Sound('data/go.mp3')
 strelba = pygame.mixer.Sound('data/я1.mp3')
 sound3 = pygame.mixer.Sound('data/fon.mp3')
 hs = []
 ens = []
 bullets = pygame.sprite.Group()
+pepsas = pygame.sprite.Group()
 ds = []
 rs = []
 clock = pygame.time.Clock()
@@ -43,13 +45,13 @@ def load_level(file):
         map_level = list(map(str.strip, f.readlines()))
     max_width = 200
     step = 20
-    towns = 3
+    towns = 5
     # есть ошибки по длине
     level = list(map(lambda x: x.ljust(max_width - 15, '0'), map_level))
     level = list(map(lambda x: x.rjust(max_width, '1'), level))
     level[3] = level[3][:7] + '@' + level[3][8:]
-    x = sample(range(15, 80, step), towns)
-    y = sample(range(0, 80, step), towns)
+    x = sample(range(15, max_width - step, step), towns)
+    y = sample(range(0, max_width - step, step), towns)
     for i in y:
         for j in range(i, i + step):
             do = level[j][:x[y.index(i)]]
@@ -58,7 +60,11 @@ def load_level(file):
     for i in y:
         hs.append(House1(x[y.index(i)] + 2, i))
         ds.append(Door1(x[y.index(i)] + 2, i))
-        rs.append(AK(x[y.index(i)] + 8, i + 8, 0))
+        e = randint(1, 10)
+        if e == 1:
+            rs.append(AK(x[y.index(i)] + 8, i + 8, 0))
+        print(e)
+
     # print('\n'.join(level))
     return level
 
@@ -168,6 +174,7 @@ class Player(pygame.sprite.Sprite):
         self.x = tile_width * pos_x
         self.y = tile_width * pos_y
         self.shield = 100
+        self.pit = 90
         self.move = True
         self.rifle = Nothing()
         self.rows = 0
@@ -220,6 +227,12 @@ class Player(pygame.sprite.Sprite):
                 self.frames = []
                 self.sheet = load_image("gg with ak.png")
                 self.cut_sheet(12, 1)
+
+        for p in peps:
+            if pygame.sprite.collide_mask(self, p):
+                self.pit += 5
+                peps.remove(p)
+                p.kill()
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, c0, c1):
@@ -315,7 +328,25 @@ class Nothing:
         pass
 
 
+class Pepsa(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(all_sprites, pepsas)
+        self.frames = []
+        self.sheet = load_image("pep.png")
+        self.cut_sheet(self.sheet, 1, 1)
+        self.mask = pygame.mask.from_surface(load_image("pep.png"))
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
 
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
 
 def generate_level(level):
     np, x, y = None, None, None
@@ -464,8 +495,21 @@ def poloska_hp(surf, x, y, pct):
     pygame.draw.rect(surf, (255, 0, 0), fill_rect)
     pygame.draw.rect(surf, (255, 255, 255), outline_rect, 2)
 
+def poloska_pit(surf, x, y, pct):
+    if pct < 0:
+        pct = 0
+    lenght = 150
+    height = 15
+    fill = (pct / 100) * lenght
+    outline_rect = pygame.Rect(x, y, lenght, height)
+    fill_rect = pygame.Rect(x, y, fill, height)
+    pygame.draw.rect(surf, (0, 0, 255), fill_rect)
+    pygame.draw.rect(surf, (255, 255, 255), outline_rect, 2)
+
 
 en = Enemy(27, 1)
+pe = Pepsa(20, 0)
+peps.append(pe)
 ens.append(en)
 camera = Camera()
 while running:
@@ -543,8 +587,10 @@ while running:
     all_sprites.update()
     enemy_group.draw(screen)
     gun_group.draw(screen)
+    pepsas.draw(screen)
     house_group.draw(screen)
     bullets.draw(screen)
     poloska_hp(screen, 5, 5, player.shield)
+    poloska_pit(screen, 170, 5, player.pit)
     clock.tick(30)
     pygame.display.flip()
