@@ -583,10 +583,10 @@ class Camera:
         self.dy = height // 2 - target.rect.y - target.rect.h // 2
 
 def poloska_hp(surf, x, y, pct):
-    helth = pygame.Rect(60, 55, player.hp, 18)
+    helth = pygame.Rect(70, 55, player.hp, 18)
     pygame.draw.rect(screen, 'red', helth)
     draw_text('HP', font, 'white', screen, 18, 52)
-    draw_text(f"{player.hp}", font_h, 'white', screen, 93, 55)
+    draw_text(f"{player.hp}", font_h, 'white', screen, 103, 55)
 
 
 def poloska_pit(surf, x, y, pct):
@@ -595,10 +595,10 @@ def poloska_pit(surf, x, y, pct):
     lenght = 150
     height = 15
     fill = (pct / 100) * lenght
-    outline_rect = pygame.Rect(x, y, lenght, height)
-    fill_rect = pygame.Rect(x, y, fill, height)
-    pygame.draw.rect(surf, (0, 0, 255), fill_rect)
-    pygame.draw.rect(surf, (255, 255, 255), outline_rect, 2)
+    fill_rect = pygame.Rect(70, 84, fill, 18)
+    pygame.draw.rect(surf, 'blue', fill_rect)
+    draw_text('EAT', font, 'white', screen, 18, 82)
+    draw_text(f"{pct}", font_h, 'white', screen, 113, 85)
 
 
 en = Enemy(27, 1)
