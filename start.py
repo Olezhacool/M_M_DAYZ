@@ -164,12 +164,13 @@ def settings():
     rules_window = pygame.display.set_mode((900, 750))
     rules_window.fill('black')
     x1 = 380
-    y1 = 260
+    k1 = 480
     x2 = 480
-    y2 = 260
-    button_zv = pygame.Rect(x1, y1, 90, 40)
+    k2 = 380
+    qqq = 0
+    button_zv = pygame.Rect(x1, 260, 90, 40)
     pygame.draw.rect(screen, '#827627', button_zv)
-    button_nzv = pygame.Rect(x2, y2, 120, 40)
+    button_nzv = pygame.Rect(x2, 260, 120, 40)
     pygame.draw.rect(screen, 'black', button_nzv)
     text = font.render("Настройки", True, 'white')
     rules_window.blit(text, (100, 50))
@@ -189,10 +190,11 @@ def settings():
                     start_screen()
                     return
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if button_zv.collidepoint(pygame.mouse.get_pos()):
-                    x1, x2 = x2, x1
+                if button_zv.collidepoint(pygame.mouse.get_pos()) and qqq:
+                    sound3.play(-1)
                 if button_nzv.collidepoint(pygame.mouse.get_pos()):
-                    x1, x2 = x2, x1
+                    qqq = 1
+                    sound3.stop()
         pygame.display.flip()
         clock.tick(FPS)
 
