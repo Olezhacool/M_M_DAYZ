@@ -7,9 +7,14 @@ import os
 FPS = 60
 pygame.init()
 peps = []
+MYEVENTTYPE = pygame.USEREVENT + 1
+minus = pygame.USEREVENT + 1
+pygame.time.set_timer(MYEVENTTYPE, 100000000)
+pygame.time.set_timer(minus, 10000)
 go = pygame.mixer.Sound('data/go.mp3')
 strelba = pygame.mixer.Sound('data/я1.mp3')
 sound3 = pygame.mixer.Sound('data/fon.mp3')
+sound3.play(-1)
 font = pygame.font.Font(None, 35)
 font_h = pygame.font.Font(None, 30)
 hs = []
@@ -40,7 +45,7 @@ def load_image(name, colorkey=None):
         image = image.convert_alpha()
     return image
 
-
+q = []
 def load_level(file):
     file = f'data/{file}'
     with open(file, 'r') as f:
@@ -62,10 +67,13 @@ def load_level(file):
     for i in y:
         hs.append(House1(x[y.index(i)] + 2, i))
         ds.append(Door1(x[y.index(i)] + 2, i))
+        peps.append(Pepsa(x[y.index(i)] + 8, i + 8))
+        q.append((x[y.index(i)] - 10, i))
         e = randint(1, 10)
         if e == 1:
             rs.append(AK(x[y.index(i)] + 8, i + 8, 0))
-        print(e)
+        if e in range(1, 6):
+            peps.append(Pepsa(x[y.index(i)] + 8, i + 8))
 
     # print('\n'.join(level))
     return level
@@ -111,6 +119,7 @@ def start_screen():
                 terminate()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if button_1.collidepoint(pygame.mouse.get_pos()):
+                    sound3.stop()
                     return
                 if button_2.collidepoint(pygame.mouse.get_pos()):
                     settings()
@@ -203,6 +212,7 @@ def died():
                 if event.key == pygame.K_ESCAPE:
                     player.hp = 100
                     # yyyyyyy
+                    sound3.play()
                     start_screen()
                     return
         pygame.display.flip()
@@ -272,7 +282,7 @@ class Player(pygame.sprite.Sprite):
         self.x = tile_width * pos_x
         self.y = tile_width * pos_y
         self.hp = 100
-        self.pit = 90
+        self.pit = 100
         self.move = True
         self.rifle = Nothing()
         self.rows = 0
@@ -285,6 +295,14 @@ class Player(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(load_image("ggm.png"))
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = tile_width * pos_x, tile_height * pos_y
+        self.golod()
+
+    def golod(self):
+        if self.pit >= 10:
+            self.pit -= 10
+        else:
+            self.pit = 0
+
 
     def cut_sheet(self, columns, rows):
         self.rect = pygame.Rect(415, 340, self.sheet.get_width() // columns,
@@ -328,7 +346,14 @@ class Player(pygame.sprite.Sprite):
 
         for p in peps:
             if pygame.sprite.collide_mask(self, p):
-                self.pit += 5
+                if self.pit <= 90:
+                    self.pit += 10
+                else:
+                    self.pit = 100
+                if self.hp <= 80:
+                    self.hp += 20
+                else:
+                    self.hp = 100
                 peps.remove(p)
                 p.kill()
 
@@ -524,6 +549,10 @@ class Enemy(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self):
+        if pygame.sprite.collide_mask(self, player):
+            player.hp -= 1
+        if player.hp <= 0:
+            died()
         if self.hp <= 0:
             self.kill()
         self.cur_frame = self.cur_frame % len(self.frames)
@@ -601,16 +630,20 @@ def poloska_pit(surf, x, y, pct):
     draw_text(f"{pct}", font_h, 'white', screen, 113, 85)
 
 
-en = Enemy(27, 1)
+for i in q:
+    ens.append(Enemy(i[0], i[1]))
 pe = Pepsa(20, 0)
 peps.append(pe)
-ens.append(en)
 camera = Camera()
 while running:
     screen.fill((0, 0, 0))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == MYEVENTTYPE:
+            player.golod()
+        if event.type == minus and player.pit == 0:
+            player.hp -= 5
         # если произошло событие - нажатие клавиши
         if event.type == pygame.MOUSEMOTION:
             coord = event.pos
@@ -636,7 +669,8 @@ while running:
                 player.cur_frame = 0
     # В зависимости от значений переменных направления
     # меняем значения координатsd
-    en.smotr()
+    for i in ens:
+        i.smotr()
     if to_shoot and player.rifle.__class__.__name__ != 'Nothing':
         player.rifle.cur_frame = (player.rifle.cur_frame + 1) % len(player.rifle.frames)
         player.rifle.shoot(coord[0], coord[1])
