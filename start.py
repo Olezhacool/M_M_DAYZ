@@ -169,7 +169,7 @@ def settings():
     k2 = 380
     qqq = 0
     button_zv = pygame.Rect(x1, 260, 90, 40)
-    pygame.draw.rect(screen, '#827627', button_zv)
+    pygame.draw.rect(screen, 'black', button_zv)
     button_nzv = pygame.Rect(x2, 260, 120, 40)
     pygame.draw.rect(screen, 'black', button_nzv)
     text = font.render("Настройки", True, 'white')
