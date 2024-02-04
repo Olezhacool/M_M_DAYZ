@@ -163,10 +163,6 @@ def settings():
     font_r = pygame.font.Font('data\DischargePro.ttf', 45)
     rules_window = pygame.display.set_mode((900, 750))
     rules_window.fill('black')
-    x1 = 380
-    k1 = 480
-    x2 = 480
-    k2 = 380
     qqq = 0
     button_zv = pygame.Rect(x1, 260, 90, 40)
     pygame.draw.rect(screen, 'black', button_zv)
